@@ -1,0 +1,1113 @@
+# Broker requires roles to perform certain tasks.
+# The Broker requires at least permission to get its configuration file.
+# The Broker requires permission to create/delete any resource defined
+# as a template, as well as any permission granted with templated roles
+# or cluster roles.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: couchbase-service-broker
+rules:
+- apiGroups:
+  - servicebroker.couchbase.com
+  resources:
+  - servicebrokerconfigs
+  verbs:
+  - list
+  - watch
+  - update
+- apiGroups:
+  - couchbase.com
+  resources:
+  - couchbaseclusters
+  - couchbasebuckets
+  - couchbaseephemeralbuckets
+  - couchbasememcachedbuckets
+  - couchbasereplications
+  - couchbaseusers
+  - couchbasegroups
+  - couchbaseroles
+  - couchbaserolebindings
+  - couchbasebackups
+  - couchbasebackuprestores
+  - couchbaseautoscalers
+  - couchbaseautoscalers/status
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - events
+  - persistentvolumeclaims
+  - pods
+  - pods/exec
+  - pods/status
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - '*'
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  verbs:
+  - '*'
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  - cronjobs
+  verbs:
+  - '*'
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - '*'
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterroles
+  - clusterrolebindings
+  verbs:
+  - '*'
+- apiGroups:
+  - servicecatalog.k8s.io
+  resources:
+  - serviceinstances
+  verbs:
+  - '*'
+---
+# The main Broker configuration.  This defines what classes and plans a client
+# can see, along with what can be configured.  Templates are bound to a plan and
+# are rendered and created when a service instance/binding is created, then cleaned
+# up when deleted.
+apiVersion: servicebroker.couchbase.com/v1alpha1
+kind: ServiceBrokerConfig
+metadata:
+  name: couchbase-service-broker
+spec:
+  catalog:
+    services:
+    - id: 056611fa-1cf5-488a-b080-010f19bf099b
+      name: couchbase-autonomous-operator
+      description: Couchbase Autonomous Operator
+      tags:
+      - database
+      - nosql
+      bindable: false
+      planUpdatable: true
+      plans:
+      - id: edd5c808-4460-470f-afad-1b6638cec614
+        name: 2.1.0
+        description: Couchbase Autonomous Operator 2.1.0
+      - id: 0780bbab-459f-4b40-9e56-e3f1fce85480
+        name: 2.2.0
+        description: Couchbase Autonomous Operator 2.2.0
+    - id: da21b71c-2c10-4a57-8773-fde45bb339ff
+      name: cao-2.1-service
+      description: Service Class for Operator 2.1 with Couchbase Server 6.5 or 7.0
+      tags:
+      - database
+      - nosql
+      bindable: true
+      planUpdatable: false
+      plans:
+      - id: ec0f2c9b-0277-46d7-985f-ba1fbf3b068d
+        name: csb-basic
+        description: Operator 2.1 with Couchbase Server 6.x with limited services
+        schemas:
+          serviceInstance:
+            create:
+              parameters:
+                $schema: "http://json-schema.org/draft-04/schema#"
+                type: object
+                required:
+                  - password
+                properties:
+                  password:
+                    description: "Administrator password"
+                    type: string
+                  image:
+                    description: "Couchbase Server image"
+                    type: string
+                  size:
+                    description: "Cluster size"
+                    type: number
+                    minimum: 3
+                    maximum: 9
+            update:
+              parameters:
+                $schema: "http://json-schema.org/draft-04/schema#"
+                type: object
+                required:
+                  - password
+                properties:
+                  password:
+                    description: "Administrator password"
+                    type: string
+                  image:
+                    description: "Couchbase Server image"
+                    type: string
+                  size:
+                    description: "Cluster size"
+                    type: number
+                    minimum: 3
+                    maximum: 9
+      - id: 27c943b3-6a11-404b-852c-5be4b0e2722d
+        name: csb-standard
+        description: Operator 2.1 with Couchbase Server 6.x with advanced services
+        schemas:
+          serviceInstance:
+            create:
+              parameters:
+                $schema: "http://json-schema.org/draft-04/schema#"
+                type: object
+                required:
+                  - password
+                  - remote-cluster-hostname
+                  - remote-cluster-username
+                  - remote-cluster-password
+                  - remote-cluster-uuid
+                properties:
+                  password:
+                    description: "Administrator password"
+                    type: string
+                  image:
+                    description: "Couchbase Server image"
+                    type: string
+                  size:
+                    description: "Cluster size"
+                    type: number
+                    minimum: 3
+                    maximum: 9
+                  remote-cluster-hostname:
+                    description: "XDCR remote cluster hostname"
+                    type: string
+                  remote-cluster-username:
+                    description: "XDCR remote cluster username"
+                    type: string
+                  remote-cluster-password:
+                    description: "XDCR remote cluster password"
+                    type: string
+                  remote-cluster-uuid:
+                    description: "XDCR remote cluster UUID"
+                    type: string
+            update:
+              parameters:
+                $schema: "http://json-schema.org/draft-04/schema#"
+                type: object
+                required:
+                  - password
+                properties:
+                  password:
+                    description: "Administrator password"
+                    type: string
+                  image:
+                    description: "Couchbase Server image"
+                    type: string
+                  size:
+                    description: "Cluster size"
+                    type: number
+                    minimum: 3
+                    maximum: 9
+    - id: 159f8ba7-f544-4db9-9b4f-036ba12f9dc9
+      name: cao-2.2-service
+      description: Service Class for Operator 2.2 with Couchbase Server 6.5 or 7.0
+      tags:
+      - database
+      - nosql
+      bindable: true
+      planUpdatable: false
+      plans:
+      - id: 77ffb4ee-98de-441d-8d61-ec763ce10600
+        name: csb-basic
+        description: Operator 2.2 with Couchbase Server 6.x with limited services
+        schemas:
+          serviceInstance:
+            create:
+              parameters:
+                $schema: "http://json-schema.org/draft-04/schema#"
+                type: object
+                required:
+                  - password
+                properties:
+                  password:
+                    description: "Administrator password"
+                    type: string
+                  image:
+                    description: "Couchbase Server image"
+                    type: string
+                  size:
+                    description: "Cluster size"
+                    type: number
+                    minimum: 3
+                    maximum: 9
+            update:
+              parameters:
+                $schema: "http://json-schema.org/draft-04/schema#"
+                type: object
+                required:
+                  - password
+                properties:
+                  password:
+                    description: "Administrator password"
+                    type: string
+                  image:
+                    description: "Couchbase Server image"
+                    type: string
+                  size:
+                    description: "Cluster size"
+                    type: number
+                    minimum: 3
+                    maximum: 9
+      - id: 659f84bf-d9f5-46ab-94b1-97c35f7bb149
+        name: csb-standard
+        description: Operator 2.2 with Couchbase Server 6.x with advanced services
+        schemas:
+          serviceInstance:
+            create:
+              parameters:
+                $schema: "http://json-schema.org/draft-04/schema#"
+                type: object
+                required:
+                  - password
+                  - remote-cluster-hostname
+                  - remote-cluster-username
+                  - remote-cluster-password
+                  - remote-cluster-uuid
+                properties:
+                  password:
+                    description: "Administrator password"
+                    type: string
+                  image:
+                    description: "Couchbase Server image"
+                    type: string
+                  size:
+                    description: "Cluster size"
+                    type: number
+                    minimum: 3
+                    maximum: 9
+                  remote-cluster-hostname:
+                    description: "XDCR remote cluster hostname"
+                    type: string
+                  remote-cluster-username:
+                    description: "XDCR remote cluster username"
+                    type: string
+                  remote-cluster-password:
+                    description: "XDCR remote cluster password"
+                    type: string
+                  remote-cluster-uuid:
+                    description: "XDCR remote cluster UUID"
+                    type: string
+            update:
+              parameters:
+                $schema: "http://json-schema.org/draft-04/schema#"
+                type: object
+                required:
+                  - password
+                properties:
+                  password:
+                    description: "Administrator password"
+                    type: string
+                  image:
+                    description: "Couchbase Server image"
+                    type: string
+                  size:
+                    description: "Cluster size"
+                    type: number
+                    minimum: 3
+                    maximum: 9
+
+  # Templates allow the end user to define anything they want to be created.
+  # The parameters if specified define where the source is, either requesst
+  # metadata or parameters.  Parameters allow defaults to be specified if
+  # the parameter is not defined.  Parameters are applied to the resource one
+  # or many times as required.
+  templates:
+  - name: couchbase-admin-secret
+    template:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: '{{ printf "%v-admin" (registry "instance-name") }}'
+      stringData:
+        username: Administrator
+        password: '{{ parameter "/password" }}'
+  - name: couchbase-operator-tls-secret
+    template:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: '{{ printf "%v-operator-tls" (registry "instance-name") }}'
+      stringData:
+        ca.crt: '{{ registry "ca-cert" }}'
+  - name: couchbase-server-tls-secret
+    template:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: '{{ printf "%v-server-tls" (registry "instance-name") }}'
+      stringData:
+        pkey.key: '{{ registry "server-key" }}'
+        chain.pem: '{{ registry "server-cert" }}'
+  - name: cluster-labels
+    template:
+      cluster: '{{ registry "instance-name" }}'
+  - name: cluster-selector
+    template:
+      matchLabels: '{{ snippet "cluster-labels" }}'
+  - name: couchbase-cluster
+    template:
+      apiVersion: couchbase.com/v2
+      kind: CouchbaseCluster
+      metadata:
+        name: '{{ registry "instance-name" }}'
+      spec:
+        image: '{{ parameter "/image" | default "couchbase/server:6.6.1" }}'
+        security:
+          adminSecret: '{{ printf "%v-admin" (registry "instance-name") }}'
+          rbac:
+            managed: true
+            selector: '{{ snippet "cluster-selector" }}'
+        networking:
+          tls:
+            static:
+              operatorSecret: '{{ printf "%v-operator-tls" (registry "instance-name") }}'
+              serverSecret: '{{ printf "%v-server-tls" (registry "instance-name") }}'
+        buckets:
+          managed: true
+          selector: '{{ snippet "cluster-selector" }}'
+        servers:
+        - name: default
+          services:
+          - data
+          - index
+          - query
+          size: '{{ parameter "/size" | default 3 }}'
+  - name: couchbase-xdcr-secret
+    template:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: '{{ printf "%v-xdcr" (registry "instance-name") }}'
+      stringData:
+        username: '{{ parameter "/remote-cluster-username" }}'
+        password: '{{ parameter "/remote-cluster-password" }}'
+  - name: couchbase-cluster-xdcr
+    template:
+      apiVersion: couchbase.com/v2
+      kind: CouchbaseCluster
+      metadata:
+        name: '{{ registry "instance-name" }}'
+      spec:
+        image: '{{ parameter "/image" | default "couchbase/server:6.6.1" }}'
+        security:
+          adminSecret: '{{ printf "%v-admin" (registry "instance-name") }}'
+          rbac:
+            managed: true
+            selector: '{{ snippet "cluster-selector" }}'
+        networking:
+          tls:
+            static:
+              operatorSecret: '{{ printf "%v-operator-tls" (registry "instance-name") }}'
+              serverSecret: '{{ printf "%v-server-tls" (registry "instance-name") }}'
+        buckets:
+          managed: true
+          selector: '{{ snippet "cluster-selector" }}'
+        servers:
+        - name: default
+          services:
+          - data
+          - index
+          - query
+          size: '{{ parameter "/size" | default 3 }}'
+        xdcr:
+          managed: true
+          remoteClusters:
+          - name: 'remote'
+            uuid: '{{ parameter "/remote-cluster-uuid" }}'
+            hostname: '{{ parameter "/remote-cluster-hostname" }}'
+            authenticationSecret: '{{ printf "%v-xdcr" (registry "instance-name") }}'
+            replications:
+              selector: '{{ snippet "cluster-selector" }}'
+  - name: couchbase-replication
+    template:
+      apiVersion: couchbase.com/v2
+      kind: CouchbaseReplication
+      metadata:
+        name: '{{ registry "instance-name" }}'
+        labels: '{{ snippet "cluster-labels" }}'
+      spec:
+        bucket: default
+        remoteBucket: default
+  - name: couchbase-bucket
+    template:
+      apiVersion: couchbase.com/v2
+      kind: CouchbaseBucket
+      metadata:
+        name: '{{ registry "instance-name" }}'
+        labels: '{{ snippet "cluster-labels" }}'
+      spec:
+        name: default
+  - name: couchbase-user-secret
+    template:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: '{{ registry "binding-name" }}'
+      data:
+        password: '{{ registry "password" }}'
+  - name: couchbase-user
+    template:
+      apiVersion: couchbase.com/v2
+      kind: CouchbaseUser
+      metadata:
+        name: '{{ registry "binding-name" }}'
+        labels: '{{ snippet "cluster-labels" }}'
+      spec:
+        authDomain: local
+        authSecret: '{{ registry "binding-name" }}'
+  - name: couchbase-group
+    template:
+      apiVersion: couchbase.com/v2
+      kind: CouchbaseGroup
+      metadata:
+        name: '{{ registry "binding-name" }}'
+        labels: '{{ snippet "cluster-labels" }}'
+      spec:
+        roles:
+        - name: bucket_admin
+          bucket: default
+  - name: couchbase-role-binding
+    template:
+      apiVersion: couchbase.com/v2
+      kind: CouchbaseRoleBinding
+      metadata:
+        name: '{{ registry "binding-name" }}'
+        labels: '{{ snippet "cluster-labels" }}'
+      spec:
+        subjects:
+        - kind: CouchbaseUser
+          name: '{{ registry "binding-name" }}'
+        roleRef:
+          kind: CouchbaseGroup
+          name: '{{ registry "binding-name" }}'
+  - name: credentials
+    template:
+      connection-string: '{{ printf "couchbases://%v-srv.%v" (registry "instance-name") (registry "namespace") }}'
+      ca.pem: '{{ registry "ca-cert" }}'
+      username: '{{ registry "binding-name" }}'
+      password: '{{ registry "password" }}'
+      bucket: default
+  - name: couchbase-operator-2-1-0
+    singleton: true
+    template:
+      apiVersion: servicecatalog.k8s.io/v1beta1
+      kind: ServiceInstance
+      metadata:
+        name: couchbase-operator
+        namespace: default
+      spec:
+        clusterServiceClassExternalName: couchbase-autonomous-operator
+        clusterServicePlanExternalName: 2.1.0
+  - name: couchbase-operator-2-2-0
+    singleton: true
+    template:
+      apiVersion: servicecatalog.k8s.io/v1beta1
+      kind: ServiceInstance
+      metadata:
+        name: couchbase-operator
+        namespace: default
+      spec:
+        clusterServiceClassExternalName: couchbase-autonomous-operator
+        clusterServicePlanExternalName: 2.2.0
+  - name: operator-serviceaccount
+    template:
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: couchbase-operator
+        namespace: default
+  - name: operator-clusterrole-2-1-0
+    template:
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRole
+      metadata:
+        name: couchbase-operator
+        namespace: default
+      rules:
+      - apiGroups:
+        - batch
+        resources:
+        - jobs
+        - cronjobs
+        verbs:
+        - list
+        - watch
+        - create
+        - update
+        - delete
+      - apiGroups:
+        - couchbase.com
+        resources:
+        - couchbaseclusters
+        verbs:
+        - get
+        - list
+        - watch
+        - update
+      - apiGroups:
+        - couchbase.com
+        resources:
+        - couchbasebuckets
+        - couchbaseephemeralbuckets
+        - couchbasememcachedbuckets
+        - couchbasereplications
+        - couchbaseusers
+        - couchbasegroups
+        - couchbaserolebindings
+        - couchbasebackups
+        verbs:
+        - list
+        - watch
+      - apiGroups:
+        - couchbase.com
+        resources:
+        - couchbasebackuprestores
+        verbs:
+        - list
+        - watch
+        - delete
+      - apiGroups:
+        - couchbase.com
+        resources:
+        - couchbaseautoscalers
+        verbs:
+        - list
+        - watch
+        - create
+        - delete
+      - apiGroups:
+        - couchbase.com
+        resources:
+        - couchbaseautoscalers/status
+        verbs:
+        - update
+      - apiGroups:
+        - ""
+        resources:
+        - configmaps
+        verbs:
+        - get
+        - create
+        - update
+        - delete
+      - apiGroups:
+        - ""
+        resources:
+        - pods
+        - pods/status
+        - services
+        - persistentvolumeclaims
+        verbs:
+        - get
+        - list
+        - watch
+        - create
+        - update
+        - delete
+        - patch
+      - apiGroups:
+        - ""
+        resources:
+        - events
+        verbs:
+        - list
+        - create
+        - update
+      - apiGroups:
+        - ""
+        resources:
+        - secrets
+        verbs:
+        - get
+        - create
+        - update
+        - list
+        - watch
+      - apiGroups:
+        - policy
+        resources:
+        - poddisruptionbudgets
+        verbs:
+        - get
+        - create
+        - delete
+        - list
+        - watch
+  - name: operator-clusterrole-2-2-0
+    template:
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRole
+      metadata:
+        name: couchbase-operator
+      rules:
+      - apiGroups:
+        - batch
+        resources:
+        - jobs
+        - cronjobs
+        verbs:
+        - list
+        - watch
+        - create
+        - update
+        - delete
+      - apiGroups:
+        - couchbase.com
+        resources:
+        - couchbaseclusters
+        verbs:
+        - get
+        - list
+        - watch
+        - update
+      - apiGroups:
+        - couchbase.com
+        resources:
+        - couchbasebuckets
+        - couchbaseephemeralbuckets
+        - couchbasememcachedbuckets
+        - couchbasereplications
+        - couchbaseusers
+        - couchbasegroups
+        - couchbaserolebindings
+        - couchbasebackups
+        verbs:
+        - list
+        - watch
+      - apiGroups:
+        - couchbase.com
+        resources:
+        - couchbasebackuprestores
+        verbs:
+        - list
+        - watch
+        - delete
+      - apiGroups:
+        - couchbase.com
+        resources:
+        - couchbaseautoscalers
+        verbs:
+        - list
+        - watch
+        - create
+        - delete
+      - apiGroups:
+        - couchbase.com
+        resources:
+        - couchbaseautoscalers/status
+        verbs:
+        - update
+      - apiGroups:
+        - ""
+        resources:
+        - configmaps
+        verbs:
+        - get
+        - create
+        - update
+        - delete
+      - apiGroups:
+        - ""
+        resources:
+        - pods
+        - pods/status
+        - services
+        - persistentvolumeclaims
+        verbs:
+        - get
+        - list
+        - watch
+        - create
+        - update
+        - delete
+        - patch
+      - apiGroups:
+        - ""
+        resources:
+        - events
+        verbs:
+        - list
+        - create
+        - update
+      - apiGroups:
+        - ""
+        resources:
+        - secrets
+        verbs:
+        - get
+        - create
+        - update
+        - list
+        - watch
+      - apiGroups:
+        - policy
+        resources:
+        - poddisruptionbudgets
+        verbs:
+        - get
+        - create
+        - delete
+        - list
+        - watch
+  - name: operator-clusterrolebinding
+    template:
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: couchbase-operator
+        namespace: default
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: couchbase-operator
+      subjects:
+      - kind: ServiceAccount
+        name: couchbase-operator
+        namespace: default
+  - name: operator-deployment-2-1-0
+    template:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: couchbase-operator
+        namespace: default
+      spec:
+        replicas: 1
+        selector:
+          matchLabels:
+            app: couchbase-operator
+        template:
+          metadata:
+            labels:
+              app: couchbase-operator
+          spec:
+            containers:
+            - args:
+              - --pod-create-timeout=10m0s
+              command:
+              - couchbase-operator
+              env:
+              - name: WATCH_NAMESPACE
+              - name: POD_NAME
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.name
+              image: couchbase/operator:2.1.0
+              name: couchbase-operator
+              ports:
+              - containerPort: 8080
+                name: http
+              - containerPort: 8383
+                name: prometheus
+              readinessProbe:
+                httpGet:
+                  path: /readyz
+                  port: http
+                  scheme: HTTP
+            serviceAccountName: couchbase-operator
+  - name: operator-deployment-2-2-0
+    template:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: couchbase-operator
+        namespace: default
+      spec:
+        replicas: 1
+        selector:
+          matchLabels:
+            app: couchbase-operator
+        template:
+          metadata:
+            labels:
+              app: couchbase-operator
+          spec:
+            containers:
+            - args:
+              - --pod-create-timeout=10m0s
+              - --zap-log-level=info
+              command:
+              - couchbase-operator
+              env:
+              - name: WATCH_NAMESPACE
+              - name: POD_NAME
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.name
+              image: couchbase/operator:2.2.0
+              name: couchbase-operator
+              ports:
+              - containerPort: 8080
+                name: http
+              - containerPort: 8383
+                name: prometheus
+              readinessProbe:
+                httpGet:
+                  path: /readyz
+                  port: http
+                  scheme: HTTP
+            serviceAccountName: couchbase-operator
+  - name: operator-service
+    template:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: couchbase-operator
+        namespace: default
+      spec:
+        ports:
+        - name: http-pprof
+          port: 8080
+          protocol: TCP
+          targetPort: 8080
+        - name: http-prometheus
+          port: 8383
+          protocol: TCP
+          targetPort: 8383
+        selector:
+          app: couchbase-operator
+  # Bindings bind templates to service plans.  These allow the specification of
+  # exactly what templates are created when a plan is instantiated or bound to.
+  bindings:
+  - name: operator-2-1-0
+    service: couchbase-autonomous-operator
+    plan: 2.1.0
+    serviceInstance:
+      templates:
+      - operator-serviceaccount
+      - operator-clusterrole-2-1-0
+      - operator-clusterrolebinding
+      - operator-deployment-2-1-0
+      - operator-service
+      readinessChecks:
+      - name: couchbase-operator-available
+        condition:
+          apiVersion: apps/v1
+          kind: Deployment
+          namespace: default
+          name: couchbase-operator
+          type: Available
+          status: "True"
+  - name: operator-2-2-0
+    service: couchbase-autonomous-operator
+    plan: 2.2.0
+    serviceInstance:
+      templates:
+      - operator-serviceaccount
+      - operator-clusterrole-2-2-0
+      - operator-clusterrolebinding
+      - operator-deployment-2-2-0
+      - operator-service
+      readinessChecks:
+      - name: couchbase-operator-available
+        condition:
+          apiVersion: apps/v1
+          kind: Deployment
+          namespace: default
+          name: couchbase-operator
+          type: Available
+          status: "True"
+  - name: csb-basic-2-1-0
+    service: cao-2.1-service
+    plan: csb-basic
+    serviceInstance:
+      registry:
+      - name: instance-name
+        value: '{{ printf "couchbase-instance-%s" (generatePassword 8 "abcdefghijklmnopqrstuvwxyz0123456789") }}'
+      - name: dashboard-url
+        value: '{{ printf "https://%s.%s:18091" (registry "instance-name") (registry "namespace") }}'
+      - name: ca-key
+        value: '{{ generatePrivateKey "RSA" "PKCS#8" 2048 }}'
+      - name: ca-cert
+        value: '{{ generateCertificate (registry "ca-key") "Couchbase Server CA" "87600h" "CA" nil nil nil }}'
+      - name: server-key
+        value: '{{ generatePrivateKey "RSA" "PKCS#1" 2048 }}'
+      - name: server-cert
+        value: '{{ generateCertificate (registry "server-key") "Couchbase Server" "87600h" "Server" (list (printf "DNS:%s-srv" (registry "instance-name")) (printf "DNS:%s-srv.%s" (registry "instance-name") (registry "namespace")) (printf "DNS:%s-srv.%s.svc" (registry "instance-name") (registry "namespace")) (printf "DNS:*.%s-srv.%s.svc.cluster.local" (registry "instance-name") (registry "namespace")) (printf "DNS:*.%s" (registry "instance-name")) (printf "DNS:*.%s.%s" (registry "instance-name") (registry "namespace")) (printf "DNS:*.%s.%s.svc" (registry "instance-name") (registry "namespace")) (printf "DNS:*.%s.%s.svc.cluster.local" (registry "instance-name") (registry "namespace")) "DNS:localhost") (registry "ca-key") (registry "ca-cert") }}'
+      templates:
+      - couchbase-admin-secret
+      - couchbase-operator-tls-secret
+      - couchbase-server-tls-secret
+      - couchbase-cluster
+      - couchbase-bucket
+      - couchbase-operator-2-1-0
+      readinessChecks:
+      - name: couchbase-cluster-available
+        condition:
+          apiVersion: couchbase.com/v2
+          kind: CouchbaseCluster
+          namespace: '{{ registry "namespace" }}'
+          name: '{{ registry "instance-name" }}'
+          type: Available
+          status: "True"
+    serviceBinding:
+      registry:
+      - name: binding-name
+        value: '{{ printf "couchbase-binding-%s" (registry "binding-id") }}'
+      - name: password
+        value: '{{ generatePassword 32 nil }}'
+      - name: credentials
+        value: '{{ snippet "credentials" }}'
+      templates:
+      - couchbase-group
+      - couchbase-role-binding
+      - couchbase-user-secret
+      - couchbase-user
+  - name: csb-standard-2-1-0
+    service: cao-2.1-service
+    plan: csb-standard
+    serviceInstance:
+      registry:
+      - name: instance-name
+        value: '{{ printf "couchbase-instance-%s" (generatePassword 8 "abcdefghijklmnopqrstuvwxyz0123456789") }}'
+      - name: dashboard-url
+        value: '{{ printf "https://%s.%s:18091" (registry "instance-name") (registry "namespace") }}'
+      - name: ca-key
+        value: '{{ generatePrivateKey "RSA" "PKCS#8" 2048 }}'
+      - name: ca-cert
+        value: '{{ generateCertificate (registry "ca-key") "Couchbase Server CA" "87600h" "CA" nil nil nil }}'
+      - name: server-key
+        value: '{{ generatePrivateKey "RSA" "PKCS#1" 2048 }}'
+      - name: server-cert
+        value: '{{ generateCertificate (registry "server-key") "Couchbase Server" "87600h" "Server" (list (printf "DNS:%s-srv" (registry "instance-name")) (printf "DNS:%s-srv.%s" (registry "instance-name") (registry "namespace")) (printf "DNS:%s-srv.%s.svc" (registry "instance-name") (registry "namespace")) (printf "DNS:*.%s-srv.%s.svc.cluster.local" (registry "instance-name") (registry "namespace")) (printf "DNS:*.%s" (registry "instance-name")) (printf "DNS:*.%s.%s" (registry "instance-name") (registry "namespace")) (printf "DNS:*.%s.%s.svc" (registry "instance-name") (registry "namespace")) (printf "DNS:*.%s.%s.svc.cluster.local" (registry "instance-name") (registry "namespace")) "DNS:localhost") (registry "ca-key") (registry "ca-cert") }}'
+      templates:
+      - couchbase-admin-secret
+      - couchbase-operator-tls-secret
+      - couchbase-server-tls-secret
+      - couchbase-xdcr-secret
+      - couchbase-cluster-xdcr
+      - couchbase-replication
+      - couchbase-bucket
+      - couchbase-operator-2-1-0
+      readinessChecks:
+      - name: couchbase-cluster-available
+        condition:
+          apiVersion: couchbase.com/v2
+          kind: CouchbaseCluster
+          namespace: '{{ registry "namespace" }}'
+          name: '{{ registry "instance-name" }}'
+          type: Available
+          status: "True"
+    serviceBinding:
+      registry:
+      - name: binding-name
+        value: '{{ printf "couchbase-binding-%s" (registry "binding-id") }}'
+      - name: password
+        value: '{{ generatePassword 32 nil }}'
+      - name: credentials
+        value: '{{ snippet "credentials" }}'
+      templates:
+      - couchbase-group
+      - couchbase-role-binding
+      - couchbase-user-secret
+      - couchbase-user
+  - name: csb-basic-2-2-0
+    service: cao-2.2-service
+    plan: csb-basic
+    serviceInstance:
+      registry:
+      - name: instance-name
+        value: '{{ printf "couchbase-instance-%s" (generatePassword 8 "abcdefghijklmnopqrstuvwxyz0123456789") }}'
+      - name: dashboard-url
+        value: '{{ printf "https://%s.%s:18091" (registry "instance-name") (registry "namespace") }}'
+      - name: ca-key
+        value: '{{ generatePrivateKey "RSA" "PKCS#8" 2048 }}'
+      - name: ca-cert
+        value: '{{ generateCertificate (registry "ca-key") "Couchbase Server CA" "87600h" "CA" nil nil nil }}'
+      - name: server-key
+        value: '{{ generatePrivateKey "RSA" "PKCS#1" 2048 }}'
+      - name: server-cert
+        value: '{{ generateCertificate (registry "server-key") "Couchbase Server" "87600h" "Server" (list (printf "DNS:%s-srv" (registry "instance-name")) (printf "DNS:%s-srv.%s" (registry "instance-name") (registry "namespace")) (printf "DNS:%s-srv.%s.svc" (registry "instance-name") (registry "namespace")) (printf "DNS:*.%s-srv.%s.svc.cluster.local" (registry "instance-name") (registry "namespace")) (printf "DNS:*.%s" (registry "instance-name")) (printf "DNS:*.%s.%s" (registry "instance-name") (registry "namespace")) (printf "DNS:*.%s.%s.svc" (registry "instance-name") (registry "namespace")) (printf "DNS:*.%s.%s.svc.cluster.local" (registry "instance-name") (registry "namespace")) "DNS:localhost") (registry "ca-key") (registry "ca-cert") }}'
+      templates:
+      - couchbase-admin-secret
+      - couchbase-operator-tls-secret
+      - couchbase-server-tls-secret
+      - couchbase-cluster
+      - couchbase-bucket
+      - couchbase-operator-2-2-0
+      readinessChecks:
+      - name: couchbase-cluster-available
+        condition:
+          apiVersion: couchbase.com/v2
+          kind: CouchbaseCluster
+          namespace: '{{ registry "namespace" }}'
+          name: '{{ registry "instance-name" }}'
+          type: Available
+          status: "True"
+    serviceBinding:
+      registry:
+      - name: binding-name
+        value: '{{ printf "couchbase-binding-%s" (registry "binding-id") }}'
+      - name: password
+        value: '{{ generatePassword 32 nil }}'
+      - name: credentials
+        value: '{{ snippet "credentials" }}'
+      templates:
+      - couchbase-group
+      - couchbase-role-binding
+      - couchbase-user-secret
+      - couchbase-user
+  - name: csb-standard-2-2-0
+    service: cao-2.2-service
+    plan: csb-standard
+    serviceInstance:
+      registry:
+      - name: instance-name
+        value: '{{ printf "couchbase-instance-%s" (generatePassword 8 "abcdefghijklmnopqrstuvwxyz0123456789") }}'
+      - name: dashboard-url
+        value: '{{ printf "https://%s.%s:18091" (registry "instance-name") (registry "namespace") }}'
+      - name: ca-key
+        value: '{{ generatePrivateKey "RSA" "PKCS#8" 2048 }}'
+      - name: ca-cert
+        value: '{{ generateCertificate (registry "ca-key") "Couchbase Server CA" "87600h" "CA" nil nil nil }}'
+      - name: server-key
+        value: '{{ generatePrivateKey "RSA" "PKCS#1" 2048 }}'
+      - name: server-cert
+        value: '{{ generateCertificate (registry "server-key") "Couchbase Server" "87600h" "Server" (list (printf "DNS:%s-srv" (registry "instance-name")) (printf "DNS:%s-srv.%s" (registry "instance-name") (registry "namespace")) (printf "DNS:%s-srv.%s.svc" (registry "instance-name") (registry "namespace")) (printf "DNS:*.%s-srv.%s.svc.cluster.local" (registry "instance-name") (registry "namespace")) (printf "DNS:*.%s" (registry "instance-name")) (printf "DNS:*.%s.%s" (registry "instance-name") (registry "namespace")) (printf "DNS:*.%s.%s.svc" (registry "instance-name") (registry "namespace")) (printf "DNS:*.%s.%s.svc.cluster.local" (registry "instance-name") (registry "namespace")) "DNS:localhost") (registry "ca-key") (registry "ca-cert") }}'
+      templates:
+      - couchbase-admin-secret
+      - couchbase-operator-tls-secret
+      - couchbase-server-tls-secret
+      - couchbase-xdcr-secret
+      - couchbase-cluster-xdcr
+      - couchbase-replication
+      - couchbase-bucket
+      - couchbase-operator-2-2-0
+      readinessChecks:
+      - name: couchbase-cluster-available
+        condition:
+          apiVersion: couchbase.com/v2
+          kind: CouchbaseCluster
+          namespace: '{{ registry "namespace" }}'
+          name: '{{ registry "instance-name" }}'
+          type: Available
+          status: "True"
+    serviceBinding:
+      registry:
+      - name: binding-name
+        value: '{{ printf "couchbase-binding-%s" (registry "binding-id") }}'
+      - name: password
+        value: '{{ generatePassword 32 nil }}'
+      - name: credentials
+        value: '{{ snippet "credentials" }}'
+      templates:
+      - couchbase-group
+      - couchbase-role-binding
+      - couchbase-user-secret
+      - couchbase-user
